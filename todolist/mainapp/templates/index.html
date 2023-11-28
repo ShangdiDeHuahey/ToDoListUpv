@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TODO List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+        
+        h1 {
+            text-align: center;
+        }
+        
+        div {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+        }
+        
+        button {
+            background-color: #4caf50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        li {
+            background-color: #fff;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        li:hover {
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        li button {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        li button:hover {
+            background-color: #c0392b;
+        }
+        
+        li input[type="checkbox"] {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>TODO List</h1>
+    
+    <div>
+        <label for="deadline">Дедлайн:</label>
+        <input type="datetime-local" id="deadline" />
+    </div>
+
+    <div>
+        <label for="task">Новая задача:</label>
+        <input type="text" id="task" />
+        
+        <label for="description">Описание:</label>
+        <input type="text" id="description" />
+        
+        <label for="worker">Имя работника:</label>
+        <input type="text" id="worker" />
+        
+        <label for="completed">Выполнено:</label>
+        <input type="checkbox" id="completed" />
+        
+        <!-- Добавлено скрытое поле для taskId -->
+        <input type="hidden" id="taskId" />
+
+        <!-- Добавлено скрытое поле для выбранной задачи -->
+        <input type="hidden" id="selectedTaskId" />
+
+        <button onclick="addTask()">Добавить</button>
+        <button onclick="editTask()">Редактировать</button>
+
+    </div>
+
+    <ul id="taskList"></ul>
+
+    <script>
+        function addTask() {
+            const taskInput = document.getElementById("task");
+            const descriptionInput = document.getElementById("description");
+            const workerInput = document.getElementById("worker");
+            const deadlineInput = document.getElementById("deadline");
+            const completedInput = document.getElementById("completed");
+
+            const taskText = taskInput.value;
+            const descriptionText = descriptionInput.value;
+            const workerText = workerInput.value;
+            const deadlineText = deadlineInput.value;
+            const completed = completedInput.checked;
+
+            if (taskText.trim() === "") {
+                alert("Введите текст задачи");
+                return;
+            }
+
+            fetch("/api/create/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Token a1abd4c85d9fec977524c886d3bc993f131f1d9d`,
+                },
+                body: JSON.stringify({
+                    Title: taskText,
+                    Description: descriptionText,
+                    Worker: workerText,
+                    Deadline: deadlineText,
+                    Completed: completed,
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Задача успешно добавлена:", data);
+                taskInput.value = "";
+                descriptionInput.value = "";
+                workerInput.value = "";
+                deadlineInput.value = "";
+                completedInput.checked = false;
+                fetchTasks();
+            })
+            .catch(error => console.error("Ошибка:", error));
+        }
+
+        function editTask() {
+            const taskIdInput = document.getElementById("taskId");
+            const taskInput = document.getElementById("task");
+            const descriptionInput = document.getElementById("description");
+            const workerInput = document.getElementById("worker");
+            const deadlineInput = document.getElementById("deadline");
+            const completedInput = document.getElementById("completed");
+            
+            // Добавлено новое поле для отслеживания выбранной задачи
+            const selectedTaskIdInput = document.getElementById("selectedTaskId");
+
+            const taskId = taskIdInput.value;
+            const taskText = taskInput.value;
+            const descriptionText = descriptionInput.value;
+            const workerText = workerInput.value;
+            const deadlineText = deadlineInput.value;
+            const completed = completedInput.checked;
+
+            if (!taskId) {
+                alert("Выберите задачу для редактирования");
+                return;
+            }
+
+            fetch(`/api/update/${selectedTaskIdInput.value}/`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Token a1abd4c85d9fec977524c886d3bc993f131f1d9d`,
+                },
+                body: JSON.stringify({
+                    Title: taskText,
+                    Description: descriptionText,
+                    Worker: workerText,
+                    Deadline: deadlineText,
+                    Completed: completed,
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Задача успешно обновлена:", data);
+                taskIdInput.value = "";
+                taskInput.value = "";
+                descriptionInput.value = "";
+                workerInput.value = "";
+                deadlineInput.value = "";
+                completedInput.checked = false;
+                selectedTaskIdInput.value = ""; // Очищаем выбранную задачу после редактирования
+                fetchTasks();
+            })
+            .catch(error => console.error("Ошибка:", error));
+        }
+
+        function selectTaskForEdit(taskId) {
+            const selectedTaskIdInput = document.getElementById("selectedTaskId");
+            selectedTaskIdInput.value = taskId;
+        
+            const task = document.getElementById(taskId);
+            document.getElementById("task").value = task.dataset.title;
+            document.getElementById("description").value = task.dataset.description;
+            document.getElementById("worker").value = task.dataset.worker;
+        
+            // Убираем секунды и часовой пояс из времени
+            const deadlineValue = task.dataset.deadline.split("T")[0] + "T" + task.dataset.deadline.split("T")[1].split(":").slice(0, 2).join(":");
+            document.getElementById("deadline").value = deadlineValue;
+        
+            document.getElementById("completed").checked = task.dataset.completed === "true";
+        }
+
+        function fetchTasks() {
+            fetch("/api/list/")
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                const taskList = document.getElementById("taskList");
+                taskList.innerHTML = "";
+                data.forEach(task => {
+                    const listItem = document.createElement("li");
+
+                    const checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.checked = task.Completed;
+                    checkbox.onchange = () => updateTaskCompletion(task.id, checkbox.checked);
+                    listItem.appendChild(checkbox);
+
+                    // Добавлено id и dataset для каждой задачи
+                    listItem.id = task.id;
+                    listItem.dataset.title = task.Title;
+                    listItem.dataset.description = task.Description;
+                    listItem.dataset.worker = task.Worker;
+                    listItem.dataset.deadline = task.Deadline;
+                    listItem.dataset.completed = task.Completed;
+
+                    // Добавлен вызов функции при клике на задачу
+                    listItem.onclick = () => selectTaskForEdit(task.id);
+
+                    listItem.textContent = task.Title + " (Дедлайн: " + task.Deadline + ", Работник: " + task.Worker + ", Описание: " + task.Description + ") ";
+
+                    const deleteButton = document.createElement("button");
+                    deleteButton.textContent = "Удалить";
+                    deleteButton.onclick = () => deleteTask(task.id);
+
+                    listItem.appendChild(deleteButton);
+
+                    taskList.appendChild(listItem);
+                });
+            })
+            .catch(error => console.error("Ошибка:", error));
+        }
+
+        function deleteTask(taskId) {
+            fetch(`/api/delete/${taskId}/`, {
+                method: "DELETE",
+            })
+            .then(() => {
+                console.log("Задача успешно удалена");
+                fetchTasks();
+            })
+            .catch(error => console.error("Ошибка:", error));
+        }
+
+        function updateTaskCompletion(taskId, completed) {
+            fetch(`/api/update/${taskId}/completion/`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Token a1abd4c85d9fec977524c886d3bc993f131f1d9d`,
+                },
+                body: JSON.stringify({
+                    Completed: completed,
+                }),
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("Network response was not ok");
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log("Статус задачи успешно обновлен:", data);
+                fetchTasks();
+            })
+            .catch(error => console.error("Ошибка:", error));
+        }
+
+        fetchTasks();
+    </script>
+</body>
+</html>
