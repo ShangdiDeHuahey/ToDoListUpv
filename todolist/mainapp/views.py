@@ -1,6 +1,10 @@
 from django.shortcuts import render
 from django.views.generic import TemplateView
+
+
 from rest_framework import generics
+
+
 from .serializers import *
 from .models import *
 
@@ -23,13 +27,6 @@ class CreateTodo(generics.CreateAPIView):
 class DeleteTodo(generics.DestroyAPIView):
     queryset = Todo.objects.all()
     serializer_class = ToDoSerializer
-
-class UpdateCompletion(generics.UpdateAPIView):
-    queryset = Todo.objects.all()
-    serializer_class = ToDoSerializer
-
-    def perform_update(self, serializer):
-        serializer.save(Completed=True)
 
 class UpdateCompletion(generics.UpdateAPIView):
     queryset = Todo.objects.all()
